@@ -14,6 +14,7 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 
 let persons = [];
 
+// Get info on how many people are in the phonebook
 app.get('/info', (request, response) => {
     Person.find({})
         .then(result => {
@@ -25,12 +26,14 @@ app.get('/info', (request, response) => {
         });
 })
 
+// Get entire phonebook
 app.get('/api/persons', (request, response) => {
     Person.find({}).then(person => {
         response.json(person);
     })
 })
 
+// Get specific person from phonebook by ID
 app.get('/api/persons/:id', (request, response, next) => {
     Person.findById(request.params.id).then(person => {
         response.json(person);
@@ -38,6 +41,7 @@ app.get('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
+// Delete person from phonebook
 app.delete('/api/persons/:id', (request, response, next) => {
     const id = request.params.id;
 
@@ -48,7 +52,8 @@ app.delete('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+// Add person to phonebook
+app.post('/api/persons', (request, response, next) => {
     const body = request.body;
     
     const person = new Person({
@@ -60,8 +65,10 @@ app.post('/api/persons', (request, response) => {
         .then(savedPerson => {
             response.json(savedPerson);
         })
+        .catch(error => next(error))
 })
 
+// Update a person in the phonebook
 app.put('/api/persons/:id', (request, response, next) => {
     const { name, number } = request.body;
 
@@ -82,6 +89,7 @@ app.put('/api/persons/:id', (request, response, next) => {
         .catch(error => next(error))
 })
 
+// returns error for unkown url
 const unknownEndPoint = (request, response) => {
     response.status(404).send({error: "unknown endpoint"})
 }
@@ -93,6 +101,9 @@ const errorHandler = (error, request, response, next) => {
 
     if(error.name === 'CastError') {
         return response.status(400).send({error: 'malformatted id'});
+    }
+    else if(error.name === 'ValidationError') {
+        return response.status(400).send({error: error.message});
     }
     next(error)
 }
